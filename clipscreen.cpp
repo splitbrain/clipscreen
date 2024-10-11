@@ -13,14 +13,20 @@
 #include <cstdlib>
 #include <thread>
 
-void draw(cairo_t *cr, int w, int h) {
+volatile sig_atomic_t sigint_received = 0;
+
+void handle_sigint(int /*sig*/) {
+    sigint_received = 1;
+}
+
+void draw_rectangle(cairo_t *cr, int w, int h) {
     cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 0.5);
     cairo_rectangle(cr, 0, 0, w, h);
     cairo_set_line_width(cr, 10.0);
     cairo_stroke(cr);
 }
 
-void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
+void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     RROutput primary_output = XRRGetOutputPrimary(d, root);
 
     // Create virtual monitor (equivalent to xrandr --setmonitor)
@@ -38,7 +44,7 @@ void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
     XRRSetMonitor(d, root, &monitor);
 }
 
-void removeMonitor(Display *display, Window root) {
+void remove_monitor(Display *display, Window root) {
     Atom monitorAtom = XInternAtom(display, "clipscreen", False);
 
     if (!monitorAtom) {
@@ -47,12 +53,6 @@ void removeMonitor(Display *display, Window root) {
 
     // Remove the virtual monitor
     XRRDeleteMonitor(display, root, monitorAtom);
-}
-
-volatile sig_atomic_t sigint_received = 0;
-
-void handle_sigint(int /*sig*/) {
-    sigint_received = 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
 
-    set_monitor(d, root, w, h, x, y);
+    add_monitor(d, root, w, h, x, y);
 
     // these two lines are really all you need
     XSetWindowAttributes attrs;
@@ -80,8 +80,6 @@ int main(int argc, char *argv[]) {
         printf("No visual found supporting 32 bit color, terminating\n");
         exit(EXIT_FAILURE);
     }
-    // these next three lines add 32 bit depth, remove if you dont need and
-    // change the flags below
     attrs.colormap = XCreateColormap(d, root, vinfo.visual, AllocNone);
     attrs.background_pixel = 0;
     attrs.border_pixel = 0;
@@ -94,7 +92,7 @@ int main(int argc, char *argv[]) {
     cairo_surface_t *surf = cairo_xlib_surface_create(d, overlay, vinfo.visual, w, h);
     cairo_t *cr = cairo_create(surf);
 
-    draw(cr, w, h);
+    draw_rectangle(cr, w, h);
     XFlush(d);
 
     printf("waiting for sigint to stdout\n");
@@ -105,7 +103,7 @@ int main(int argc, char *argv[]) {
     cairo_destroy(cr);
     cairo_surface_destroy(surf);
 
-    removeMonitor(d, root);
+    remove_monitor(d, root);
 
     XUnmapWindow(d, overlay);
     XCloseDisplay(d);
