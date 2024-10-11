@@ -1,18 +1,16 @@
-#include <assert.h>
-#include <stdio.h>
-#include <X11/Xlib.h>
 #include <X11/X.h>
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xrandr.h>
-
-#include <cairo.h>
+#include <assert.h>
 #include <cairo-xlib.h>
-
-#include <cstdlib>
-#include <csignal>
-#include <csignal>
+#include <cairo.h>
+#include <stdio.h>
 #include <unistd.h>
+
 #include <chrono>
+#include <csignal>
+#include <cstdlib>
 #include <thread>
 
 void draw(cairo_t *cr, int w, int h) {
@@ -28,19 +26,19 @@ void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
     // Create virtual monitor (equivalent to xrandr --setmonitor)
     XRRMonitorInfo monitor;
     monitor.name = XInternAtom(d, "clipscreen", False);
-    monitor.x = x+5;
-    monitor.y = y+5;
-    monitor.width = w-10;
-    monitor.height = h-10;
-    monitor.mwidth = w-10; // Aspect ratio 1/1
-    monitor.mheight = h-10; // Aspect ratio 1/1
-    monitor.noutput = 1; // Number of outputs used by this monitor
+    monitor.x = x + 5;
+    monitor.y = y + 5;
+    monitor.width = w - 10;
+    monitor.height = h - 10;
+    monitor.mwidth = w - 10;  // Aspect ratio 1/1
+    monitor.mheight = h - 10; // Aspect ratio 1/1
+    monitor.noutput = 1;      // Number of outputs used by this monitor
     monitor.outputs = &primary_output;
 
     XRRSetMonitor(d, root, &monitor);
 }
 
-void removeMonitor(Display* display, Window root) {
+void removeMonitor(Display *display, Window root) {
     Atom monitorAtom = XInternAtom(display, "clipscreen", False);
 
     if (!monitorAtom) {
@@ -50,7 +48,6 @@ void removeMonitor(Display* display, Window root) {
     // Remove the virtual monitor
     XRRDeleteMonitor(display, root, monitorAtom);
 }
-
 
 volatile sig_atomic_t sigint_received = 0;
 
@@ -83,23 +80,19 @@ int main(int argc, char *argv[]) {
         printf("No visual found supporting 32 bit color, terminating\n");
         exit(EXIT_FAILURE);
     }
-    // these next three lines add 32 bit depth, remove if you dont need and change the flags below
+    // these next three lines add 32 bit depth, remove if you dont need and
+    // change the flags below
     attrs.colormap = XCreateColormap(d, root, vinfo.visual, AllocNone);
     attrs.background_pixel = 0;
     attrs.border_pixel = 0;
 
-    Window overlay = XCreateWindow(
-        d, root,
-        x, y, w, h, 0,
-        vinfo.depth, InputOutput,
-        vinfo.visual,
-        CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs
-    );
+    Window overlay = XCreateWindow(d, root, x, y, w, h, 0, vinfo.depth, InputOutput, vinfo.visual,
+                                   CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs);
 
     XMapWindow(d, overlay);
 
-    cairo_surface_t* surf = cairo_xlib_surface_create(d, overlay, vinfo.visual, w, h);
-    cairo_t* cr = cairo_create(surf);
+    cairo_surface_t *surf = cairo_xlib_surface_create(d, overlay, vinfo.visual, w, h);
+    cairo_t *cr = cairo_create(surf);
 
     draw(cr, w, h);
     XFlush(d);
