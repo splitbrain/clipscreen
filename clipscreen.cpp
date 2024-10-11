@@ -70,6 +70,7 @@ void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     monitor.outputs = &primary_output;
 
     XRRSetMonitor(d, root, &monitor);
+    printf("Added virtual monitor\n");
 }
 
 /**
@@ -89,6 +90,36 @@ void remove_monitor(Display *display, Window root) {
 
     // Remove the virtual monitor
     XRRDeleteMonitor(display, root, monitorAtom);
+    printf("\nRemoved virtual monitor\n");
+}
+
+/**
+ * @brief Creates an overlay window on the display.
+ *
+ * Sets up an overlay window with the specified dimensions and position.
+ *
+ * @param d The display connection.
+ * @param root The root window.
+ * @param vinfo The X visuals
+ * @param w The width of the overlay.
+ * @param h The height of the overlay.
+ * @param x The x-coordinate of the overlay.
+ * @param y The y-coordinate of the overlay.
+ * @return Window The created overlay window.
+ */
+Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, int h, int x, int y) {
+    XSetWindowAttributes attrs;
+    attrs.override_redirect = true;
+
+    attrs.colormap = XCreateColormap(d, root, vinfo.visual, AllocNone);
+    attrs.background_pixel = 0;
+    attrs.border_pixel = 0;
+
+    Window overlay = XCreateWindow(d, root, x, y, w, h, 0, vinfo.depth, InputOutput, vinfo.visual,
+                                   CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs);
+
+    XMapWindow(d, overlay);
+    return overlay;
 }
 
 /**
@@ -101,55 +132,50 @@ void remove_monitor(Display *display, Window root) {
  * @return int Exit status.
  */
 int main(int argc, char *argv[]) {
-    signal(SIGINT, handle_sigint);
+    // parse arguments
     if (argc != 5) {
         fprintf(stderr, "Usage: %s <width> <height> <x> <y>\n", argv[0]);
         return EXIT_FAILURE;
     }
-
     int w = atoi(argv[1]);
     int h = atoi(argv[2]);
     int x = atoi(argv[3]);
     int y = atoi(argv[4]);
+
+    // set up signal handler
+    signal(SIGINT, handle_sigint);
+
+    // set up X11
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
 
-    add_monitor(d, root, w, h, x, y);
-
-    // these two lines are really all you need
-    XSetWindowAttributes attrs;
-    attrs.override_redirect = true;
-
+    // Initialize Visuals and check for 32 bit color support
     XVisualInfo vinfo;
     if (!XMatchVisualInfo(d, DefaultScreen(d), 32, TrueColor, &vinfo)) {
         printf("No visual found supporting 32 bit color, terminating\n");
         exit(EXIT_FAILURE);
     }
-    attrs.colormap = XCreateColormap(d, root, vinfo.visual, AllocNone);
-    attrs.background_pixel = 0;
-    attrs.border_pixel = 0;
 
-    Window overlay = XCreateWindow(d, root, x, y, w, h, 0, vinfo.depth, InputOutput, vinfo.visual,
-                                   CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs);
-
-    XMapWindow(d, overlay);
-
+    // create overlay border
+    Window overlay = create_overlay_window(d, root, vinfo, w, h, x, y);
     cairo_surface_t *surf = cairo_xlib_surface_create(d, overlay, vinfo.visual, w, h);
     cairo_t *cr = cairo_create(surf);
-
     draw_rectangle(cr, w, h);
     XFlush(d);
 
-    printf("waiting for sigint to stdout\n");
+    // add virtual monitor
+    add_monitor(d, root, w, h, x, y);
+
+    // wait for SIGINT
+    printf("Press Ctrl+C to exit\n");
     while (!sigint_received) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
+    // clean up
+    remove_monitor(d, root);
     cairo_destroy(cr);
     cairo_surface_destroy(surf);
-
-    remove_monitor(d, root);
-
     XUnmapWindow(d, overlay);
     XCloseDisplay(d);
     return 0;
