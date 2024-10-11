@@ -13,6 +13,7 @@
 
 #include <cstdlib>
 #include <csignal>
+#include <csignal>
 #include <unistd.h>
 #include <chrono>
 #include <thread>
@@ -64,7 +65,14 @@ void removeMonitor(Display* display, Window root) {
 }
 
 
+volatile sig_atomic_t sigint_received = 0;
+
+void handle_sigint(int sig) {
+    sigint_received = 1;
+}
+
 int main(int argc, char *argv[]) {
+    signal(SIGINT, handle_sigint);
     if (argc != 5) {
         fprintf(stderr, "Usage: %s <width> <height> <x> <y>\n", argv[0]);
         return EXIT_FAILURE;
@@ -118,9 +126,12 @@ int main(int argc, char *argv[]) {
     draw(cr, w, h);
     XFlush(d);
 
-    // wait for sig int here
     printf("waiting for sigint to stdout\n");
-    pause();
+    while (!sigint_received) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // all of the following lines should be executed on SIG_INT
     printf("shutting down\n");
 
     cairo_destroy(cr);
