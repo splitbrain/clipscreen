@@ -10,5 +10,8 @@ all: $(TARGET)
 $(TARGET): $(SOURCES)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
 
+format:
+	clang-format -i $(SOURCES)
+
 clean:
 	rm -f $(TARGET)
