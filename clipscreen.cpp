@@ -155,6 +155,9 @@ int main(int argc, char *argv[]) {
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
 
+    // add virtual monitor
+    add_monitor(d, root, w, h, x, y);
+
     // Initialize Visuals and check for 32 bit color support
     XVisualInfo vinfo;
     if (!XMatchVisualInfo(d, DefaultScreen(d), 32, TrueColor, &vinfo)) {
@@ -168,9 +171,6 @@ int main(int argc, char *argv[]) {
     cairo_t *cr = cairo_create(surf);
     draw_rectangle(cr, w, h);
     XFlush(d);
-
-    // add virtual monitor
-    add_monitor(d, root, w, h, x, y);
 
     // wait for SIGINT
     printf("Press Ctrl+C to exit\n");
