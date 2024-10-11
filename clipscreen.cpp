@@ -1,7 +1,8 @@
-#include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xfixes.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/shape.h>
 #include <assert.h>
 #include <cairo-xlib.h>
 #include <cairo.h>
@@ -117,6 +118,11 @@ Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, 
 
     Window overlay = XCreateWindow(d, root, x, y, w, h, 0, vinfo.depth, InputOutput, vinfo.visual,
                                    CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs);
+
+    XRectangle rect;
+    XserverRegion region = XFixesCreateRegion(d, &rect, 0);
+    XFixesSetWindowShapeRegion(d, overlay, ShapeInput, 0, 0, region);
+    XFixesDestroyRegion(d, region);
 
     XMapWindow(d, overlay);
     return overlay;
