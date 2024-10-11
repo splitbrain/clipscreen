@@ -36,12 +36,12 @@ void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
     // Create virtual monitor (equivalent to xrandr --setmonitor)
     XRRMonitorInfo monitor;
     monitor.name = XInternAtom(d, "screenshare", False);
-    monitor.x = x;
-    monitor.y = y;
-    monitor.width = w;
-    monitor.height = h;
-    monitor.mwidth = w; // Aspect ratio 1/1
-    monitor.mheight = h; // Aspect ratio 1/1
+    monitor.x = x+5;
+    monitor.y = y+5;
+    monitor.width = w-10;
+    monitor.height = h-10;
+    monitor.mwidth = w-10; // Aspect ratio 1/1
+    monitor.mheight = h-10; // Aspect ratio 1/1
     monitor.noutput = 1; // Number of outputs used by this monitor
     RROutput primary_output = XRRGetOutputPrimary(d, root);
     monitor.outputs = &primary_output;
