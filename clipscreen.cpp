@@ -15,17 +15,45 @@
 
 volatile sig_atomic_t sigint_received = 0;
 
+/**
+ * @brief Signal handler for SIGINT.
+ *
+ * Sets the sigint_received flag to 1 when a SIGINT is received.
+ *
+ * @param sig The signal number (unused).
+ */
 void handle_sigint(int /*sig*/) {
     sigint_received = 1;
 }
 
+/**
+ * @brief Draws a green rectangle on the given Cairo context.
+ *
+ * @param cr The Cairo context to draw on.
+ * @param w The width of the rectangle.
+ * @param h The height of the rectangle.
+ */
 void draw_rectangle(cairo_t *cr, int w, int h) {
-    cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 0.5);
+    cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 0.5);
     cairo_rectangle(cr, 0, 0, w, h);
     cairo_set_line_width(cr, 10.0);
     cairo_stroke(cr);
 }
 
+/**
+ * @brief Adds a virtual monitor to the display.
+ *
+ * Creates a virtual monitor with the specified dimensions and position.
+ *
+ * The created monitor will be 10px smaller than specified to not overlap with the window border.
+ *
+ * @param d The display connection.
+ * @param root The root window.
+ * @param w The width of the monitor.
+ * @param h The height of the monitor.
+ * @param x The x-coordinate of the monitor.
+ * @param y The y-coordinate of the monitor.
+ */
 void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     RROutput primary_output = XRRGetOutputPrimary(d, root);
 
@@ -44,6 +72,14 @@ void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     XRRSetMonitor(d, root, &monitor);
 }
 
+/**
+ * @brief Removes the virtual monitor from the display.
+ *
+ * Deletes the virtual monitor named "clipscreen".
+ *
+ * @param display The display connection.
+ * @param root The root window.
+ */
 void remove_monitor(Display *display, Window root) {
     Atom monitorAtom = XInternAtom(display, "clipscreen", False);
 
@@ -55,6 +91,15 @@ void remove_monitor(Display *display, Window root) {
     XRRDeleteMonitor(display, root, monitorAtom);
 }
 
+/**
+ * @brief Main function for the clipscreen application.
+ *
+ * Sets up a virtual monitor and draws a rectangle around it. Waits for SIGINT to terminate.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ * @return int Exit status.
+ */
 int main(int argc, char *argv[]) {
     signal(SIGINT, handle_sigint);
     if (argc != 5) {
