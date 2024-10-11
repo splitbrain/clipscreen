@@ -23,16 +23,11 @@ void draw(cairo_t *cr, int w, int h) {
 }
 
 void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
-    XRRScreenResources *screen = XRRGetScreenResources(d, root);
-    XRROutputInfo *output_info = XRRGetOutputInfo(d, screen, screen->outputs[0]);
-
-    XRRMonitorInfo *monitors;
-    int nmonitors;
-    monitors = XRRGetMonitors(d, root, true, &nmonitors);
+    RROutput primary_output = XRRGetOutputPrimary(d, root);
 
     // Create virtual monitor (equivalent to xrandr --setmonitor)
     XRRMonitorInfo monitor;
-    monitor.name = XInternAtom(d, "screenshare", False);
+    monitor.name = XInternAtom(d, "clipscreen", False);
     monitor.x = x+5;
     monitor.y = y+5;
     monitor.width = w-10;
@@ -40,18 +35,13 @@ void set_monitor(Display *d, Window root, int w, int h, int x, int y) {
     monitor.mwidth = w-10; // Aspect ratio 1/1
     monitor.mheight = h-10; // Aspect ratio 1/1
     monitor.noutput = 1; // Number of outputs used by this monitor
-    RROutput primary_output = XRRGetOutputPrimary(d, root);
     monitor.outputs = &primary_output;
 
     XRRSetMonitor(d, root, &monitor);
-
-    XRRFreeMonitors(monitors);
-    XRRFreeOutputInfo(output_info);
-    XRRFreeScreenResources(screen);
 }
 
 void removeMonitor(Display* display, Window root) {
-    Atom monitorAtom = XInternAtom(display, "screenshare", False);
+    Atom monitorAtom = XInternAtom(display, "clipscreen", False);
 
     if (!monitorAtom) {
         return;
@@ -81,7 +71,7 @@ int main(int argc, char *argv[]) {
     int y = atoi(argv[4]);
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
-    //int default_screen = XDefaultScreen(d);
+
     set_monitor(d, root, w, h, x, y);
 
     // these two lines are really all you need
@@ -98,13 +88,6 @@ int main(int argc, char *argv[]) {
     attrs.background_pixel = 0;
     attrs.border_pixel = 0;
 
-    // Window XCreateWindow(
-    //     Display *display, Window parent,
-    //     int x, int y, unsigned int width, unsigned int height, unsigned int border_width,
-    //     int depth, unsigned int class,
-    //     Visual *visual,
-    //     unsigned long valuemask, XSetWindowAttributes *attributes
-    // );
     Window overlay = XCreateWindow(
         d, root,
         x, y, w, h, 0,
@@ -115,9 +98,7 @@ int main(int argc, char *argv[]) {
 
     XMapWindow(d, overlay);
 
-    cairo_surface_t* surf = cairo_xlib_surface_create(d, overlay,
-                                  vinfo.visual,
-                                  w, h);
+    cairo_surface_t* surf = cairo_xlib_surface_create(d, overlay, vinfo.visual, w, h);
     cairo_t* cr = cairo_create(surf);
 
     draw(cr, w, h);
@@ -127,9 +108,6 @@ int main(int argc, char *argv[]) {
     while (!sigint_received) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
-    // all of the following lines should be executed on SIG_INT
-    printf("shutting down\n");
 
     cairo_destroy(cr);
     cairo_surface_destroy(surf);
