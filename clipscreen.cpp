@@ -1,6 +1,3 @@
-// compile with
-// g++ -lXfixes -lXcomposite -lX11 `pkg-config --cflags --libs cairo` overlay.c
-
 #include <assert.h>
 #include <stdio.h>
 #include <X11/Xlib.h>
@@ -67,7 +64,7 @@ void removeMonitor(Display* display, Window root) {
 
 volatile sig_atomic_t sigint_received = 0;
 
-void handle_sigint(int sig) {
+void handle_sigint(int /*sig*/) {
     sigint_received = 1;
 }
 
@@ -84,7 +81,7 @@ int main(int argc, char *argv[]) {
     int y = atoi(argv[4]);
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
-    int default_screen = XDefaultScreen(d);
+    //int default_screen = XDefaultScreen(d);
     set_monitor(d, root, w, h, x, y);
 
     // these two lines are really all you need
