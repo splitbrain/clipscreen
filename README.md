@@ -1,6 +1,6 @@
-# ClipScreen
+# clipscreen
 
-ClipScreen is a simple application that creates a virtual monitor that mirrors a portion of your screen. A green rectangle highlights the specified area. 
+clipscreen is a simple application that creates a virtual monitor that mirrors a portion of your screen. A green rectangle highlights the specified area. 
 
 Why's this useful? You can use any screen sharing tool (Google Meet, Microsoft Teams, Jitsi Meet, etc.) to share the virtual monitor instead of your entire screen. No need to share individual windows and having to switch between them, just move any window you wannt to share into the green border.
 
