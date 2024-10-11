@@ -16,14 +16,23 @@
 #include <chrono>
 #include <thread>
 
-void draw(cairo_t *cr) {
+void draw(cairo_t *cr, int w, int h) {
     cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 0.5);
-    cairo_rectangle(cr, 0, 0, 200, 200);
+    cairo_rectangle(cr, 0, 0, w, h);
     cairo_set_line_width(cr, 10.0);
     cairo_stroke(cr);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 5) {
+        fprintf(stderr, "Usage: %s <width> <height> <x> <y>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    int w = atoi(argv[1]);
+    int h = atoi(argv[2]);
+    int x = atoi(argv[3]);
+    int y = atoi(argv[4]);
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
     int default_screen = XDefaultScreen(d);
@@ -51,7 +60,7 @@ int main() {
     // );
     Window overlay = XCreateWindow(
         d, root,
-        0, 0, 200, 200, 0,
+        x, y, w, h, 0,
         vinfo.depth, InputOutput,
         vinfo.visual,
         CWOverrideRedirect | CWColormap | CWBackPixel | CWBorderPixel, &attrs
@@ -61,10 +70,10 @@ int main() {
 
     cairo_surface_t* surf = cairo_xlib_surface_create(d, overlay,
                                   vinfo.visual,
-                                  200, 200);
+                                  w, h);
     cairo_t* cr = cairo_create(surf);
 
-    draw(cr);
+    draw(cr, w, h);
     XFlush(d);
 
     // wait for sig int here
