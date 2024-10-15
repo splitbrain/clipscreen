@@ -28,6 +28,24 @@ void handle_sigint(int /*sig*/) {
 }
 
 /**
+ * @brief Ad-hoc XError handler.
+ *
+ * @param d The display connection.
+ * @param ev The error event.
+ */
+int xerror_handler(Display *d, XErrorEvent *ev) {
+    if (ev->error_code == BadValue) {
+        return 0; // just ignore the error, the virtual monitor will be recreated
+    };
+
+    char xerror[128];
+    XGetErrorText(d, ev->error_code, xerror, 128);
+
+    fprintf(stderr, "xerror_handler: %s\n", xerror);
+    return ev->error_code;
+}
+
+/**
  * @brief Draws a green rectangle on the given Cairo context.
  *
  * @param cr The Cairo context to draw on.
@@ -154,6 +172,9 @@ int main(int argc, char *argv[]) {
     // set up X11
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
+
+    // set up error handling for X11
+    XSetErrorHandler(xerror_handler);
 
     // add virtual monitor
     add_monitor(d, root, w, h, x, y);
