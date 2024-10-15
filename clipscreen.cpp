@@ -12,6 +12,7 @@
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
+#include <cstring>
 #include <thread>
 
 volatile sig_atomic_t sigint_received = 0;
@@ -42,6 +43,29 @@ void draw_rectangle(cairo_t *cr, int w, int h) {
 }
 
 /**
+ * @brief Removes the virtual monitor from the display.
+ *
+ * Deletes the virtual monitor named "clipscreen" if it exists.
+ *
+ * @param display The display connection.
+ * @param root The root window.
+ */
+void remove_monitor(Display *display, Window root) {
+    int numMonitors;
+    XRRMonitorInfo *monitors = XRRGetMonitors(display, root, True, &numMonitors);
+
+    for (int i = 0; i < numMonitors; ++i) {
+        if (strcmp(XGetAtomName(display, monitors[i].name), "clipscreen") == 0) {
+            XRRDeleteMonitor(display, root, monitors[i].name);
+            printf("Removed virtual monitor\n");
+            break;
+        }
+    }
+
+    XFree(monitors);
+}
+
+/**
  * @brief Adds a virtual monitor to the display.
  *
  * Creates a virtual monitor with the specified dimensions and position.
@@ -56,6 +80,9 @@ void draw_rectangle(cairo_t *cr, int w, int h) {
  * @param y The y-coordinate of the monitor.
  */
 void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
+    // remove any leftover virtual monitor
+    remove_monitor(d, root);
+
     RROutput primary_output = XRRGetOutputPrimary(d, root);
 
     // Create virtual monitor (equivalent to xrandr --setmonitor)
@@ -72,26 +99,6 @@ void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
 
     XRRSetMonitor(d, root, &monitor);
     printf("Added virtual monitor\n");
-}
-
-/**
- * @brief Removes the virtual monitor from the display.
- *
- * Deletes the virtual monitor named "clipscreen".
- *
- * @param display The display connection.
- * @param root The root window.
- */
-void remove_monitor(Display *display, Window root) {
-    Atom monitorAtom = XInternAtom(display, "clipscreen", False);
-
-    if (!monitorAtom) {
-        return;
-    }
-
-    // Remove the virtual monitor
-    XRRDeleteMonitor(display, root, monitorAtom);
-    printf("\nRemoved virtual monitor\n");
 }
 
 /**
