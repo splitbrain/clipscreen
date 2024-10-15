@@ -64,8 +64,9 @@ With this command, you will be able to select a portion of the screen interactiv
 To terminate the application, press `Ctrl+C` in the terminal where the application is running.
 
 ## Links
-[hacksaw](https://github.com/neXromancers/hacksaw)
-[slop](https://github.com/naelstrof/slop)
+
+  * [hacksaw](https://github.com/neXromancers/hacksaw)
+  * [slop](https://github.com/naelstrof/slop)
 
 ## License
 
