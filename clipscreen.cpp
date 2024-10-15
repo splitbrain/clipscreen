@@ -129,6 +129,43 @@ Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, 
 }
 
 /**
+ * @brief Parses the geometry from the command-line arguments.
+ *
+ * Sets the width, height, x, and y accordingly and ensures a minimum size of 100x100.
+ *
+ * Exits on errors.
+ *
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ * @param w The width of the window.
+ * @param h The height of the window.
+ * @param x The x-coordinate of the window.
+ * @param y The y-coordinate of the window.
+ */
+void initGeometry(int argc, char *argv[], unsigned int &w, unsigned int &h, int &x, int &y) {
+    if (argc > 2 || argc <= 1) {
+        fprintf(stderr, "Usage: %s <width>x<height>+<x>+<y> (e.g. 800x600+100+100)\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    int ret = XParseGeometry(argv[1], &x, &y, &w, &h);
+    if (ret == 0) {
+        fprintf(stderr, "invalid geometry: %s (e.g. 800x600+100+100)\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+
+    // ensure minimum size so that we can draw a border around something
+    if (w < 100) {
+        fprintf(stderr, "Auto adjusted width\n");
+        w = 100;
+    }
+    if (h < 100) {
+        fprintf(stderr, "Auto adjusted height\n");
+        h = 100;
+    }
+}
+
+/**
  * @brief Main function for the clipscreen application.
  *
  * Sets up a virtual monitor and draws a rectangle around it. Waits for SIGINT to terminate.
@@ -138,15 +175,13 @@ Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, 
  * @return int Exit status.
  */
 int main(int argc, char *argv[]) {
-    // parse arguments
-    if (argc != 5) {
-        fprintf(stderr, "Usage: %s <width> <height> <x> <y>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-    int w = atoi(argv[1]);
-    int h = atoi(argv[2]);
-    int x = atoi(argv[3]);
-    int y = atoi(argv[4]);
+    unsigned int w = 0;
+    unsigned int h = 0;
+    int x = 0;
+    int y = 0;
+
+    // parse geometry from arguments
+    initGeometry(argc, argv, w, h, x, y);
 
     // set up signal handler
     signal(SIGINT, handle_sigint);
