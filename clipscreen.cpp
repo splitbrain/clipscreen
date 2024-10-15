@@ -7,25 +7,13 @@
 #include <cairo-xlib.h>
 #include <cairo.h>
 #include <stdio.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <thread>
-
-volatile sig_atomic_t sigint_received = 0;
-
-/**
- * @brief Signal handler for SIGINT.
- *
- * Sets the sigint_received flag to 1 when a SIGINT is received.
- *
- * @param sig The signal number (unused).
- */
-void handle_sigint(int /*sig*/) {
-    sigint_received = 1;
-}
 
 /**
  * @brief Draws a green rectangle on the given Cairo context.
@@ -148,8 +136,27 @@ int main(int argc, char *argv[]) {
     int x = atoi(argv[3]);
     int y = atoi(argv[4]);
 
-    // set up signal handler
-    signal(SIGINT, handle_sigint);
+    pid_t pid;
+    pid = fork();
+    sigset_t blockset;
+    switch (pid) {
+    case -1:
+        perror("fork");
+        exit(EXIT_FAILURE);
+        break;
+    case 0:
+        // child process
+        pause(); // wait for signal, e.g. ctrl-C
+        return 0;
+    default:
+        // parent process
+        // block all signals and wait for child process to exit below
+        sigfillset(&blockset);
+        if (sigprocmask(SIG_BLOCK, &blockset, NULL) == -1) {
+            perror("sigprocmask");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     // set up X11
     Display *d = XOpenDisplay(NULL);
@@ -172,11 +179,10 @@ int main(int argc, char *argv[]) {
     draw_rectangle(cr, w, h);
     XFlush(d);
 
-    // wait for SIGINT
-    printf("Press Ctrl+C to exit\n");
-    while (!sigint_received) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    // only parent can reach here
+    // wait for child
+    int status;
+    waitpid(pid, &status, 0);
 
     // clean up
     remove_monitor(d, root);
