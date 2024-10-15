@@ -12,6 +12,10 @@ Ensure you have the following installed on your system:
 - Cairo graphics library
 - A C++ compiler (e.g., g++)
 
+For example, on Ubuntu 24.04,
+running `apt-get install libx11-dev xserver-xorg-dev xorg-dev libcairo2-dev g++`
+will install the required libraries.
+
 Then simply run the following command to compile the application:
 
 ```bash
