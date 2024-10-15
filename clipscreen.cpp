@@ -190,8 +190,9 @@ int main(int argc, char *argv[]) {
     // parse geometry from arguments
     initGeometry(argc, argv, w, h, x, y);
 
-    // set up signal handler
+    // set up signal handlers
     signal(SIGINT, handle_sigint);
+    signal(SIGTERM, handle_sigint);
 
     // set up X11
     Display *d = XOpenDisplay(NULL);
