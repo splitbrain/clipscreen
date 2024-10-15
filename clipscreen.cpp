@@ -15,19 +15,6 @@
 #include <cstring>
 #include <thread>
 
-volatile sig_atomic_t sigint_received = 0;
-
-/**
- * @brief Signal handler for SIGINT.
- *
- * Sets the sigint_received flag to 1 when a SIGINT is received.
- *
- * @param sig The signal number (unused).
- */
-void handle_sigint(int /*sig*/) {
-    sigint_received = 1;
-}
-
 /**
  * @brief Draws a green rectangle on the given Cairo context.
  *
@@ -190,10 +177,6 @@ int main(int argc, char *argv[]) {
     // parse geometry from arguments
     initGeometry(argc, argv, w, h, x, y);
 
-    // set up signal handlers
-    signal(SIGINT, handle_sigint);
-    signal(SIGTERM, handle_sigint);
-
     // set up X11
     Display *d = XOpenDisplay(NULL);
     Window root = DefaultRootWindow(d);
@@ -215,11 +198,15 @@ int main(int argc, char *argv[]) {
     draw_rectangle(cr, w, h);
     XFlush(d);
 
-    // wait for SIGINT
-    printf("Press Ctrl+C to exit\n");
-    while (!sigint_received) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    // wait for SIGINT or SIGTERM
+    printf("Press Ctrl-C to exit\n");
+    int sig;
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGINT);
+    sigaddset(&sigset, SIGTERM);
+    sigprocmask(SIG_BLOCK, &sigset, nullptr);
+    sigwait(&sigset, &sig);
 
     // clean up
     remove_monitor(d, root);
