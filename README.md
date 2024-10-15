@@ -25,7 +25,7 @@ Note: The application has only been tested on Linux and xorg. I doubt it will wo
 Run the compiled executable with the following command:
 
 ```bash
-./clipscreen <width> <height> <x> <y>
+./clipscreen <width>x<height>+<x>+<y>
 ```
 
 - `<width>`: The width of the overlay and virtual monitor.
@@ -36,14 +36,32 @@ Run the compiled executable with the following command:
 For example:
 
 ```bash
-./clipscreen 800 600 100 100
+./clipscreen 800x600+100+100
 ```
 
 This command will create an 800x600 overlay window starting at position (100, 100) on your screen.
 
+To select an area interactively:
+
+```bash
+./clipscreen $(hacksaw)
+```
+
+or
+
+```bash
+./clipscreen $(slop)
+```
+
+With this command, you will be able to select a portion of the screen interactively.
+
 ## Termination
 
 To terminate the application, press `Ctrl+C` in the terminal where the application is running.
+
+## Links
+[hacksaw](https://github.com/neXromancers/hacksaw)
+[slop](https://github.com/naelstrof/slop)
 
 ## License
 

@@ -139,14 +139,21 @@ Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, 
  */
 int main(int argc, char *argv[]) {
     // parse arguments
-    if (argc != 5) {
-        fprintf(stderr, "Usage: %s <width> <height> <x> <y>\n", argv[0]);
+    if (argc > 2 || argc <= 1) {
+        fprintf(stderr, "Usage: %s <width>x<height>+<x>+<y> (e.g. 800x600+100+100)\n", argv[0]);
         return EXIT_FAILURE;
     }
-    int w = atoi(argv[1]);
-    int h = atoi(argv[2]);
-    int x = atoi(argv[3]);
-    int y = atoi(argv[4]);
+
+    unsigned int w = 0;
+    unsigned int h = 0;
+    int x = 0;
+    int y = 0;
+
+    int ret = XParseGeometry(argv[1], &x, &y, &w, &h);
+    if (ret == 0) {
+        fprintf(stderr, "invalid geometry: %s (e.g. 800x600+100+100)\n", argv[1]);
+        return EXIT_FAILURE;
+    }
 
     // set up signal handler
     signal(SIGINT, handle_sigint);
