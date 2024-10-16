@@ -81,7 +81,7 @@ void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     monitor.height = h - 10;
     monitor.mwidth = w - 10;  // Aspect ratio 1/1
     monitor.mheight = h - 10; // Aspect ratio 1/1
-    monitor.noutput = 1;      // Number of outputs used by this monitor
+    monitor.noutput = 0; // Output 0 is none
     monitor.outputs = &primary_output;
 
     XRRSetMonitor(d, root, &monitor);
