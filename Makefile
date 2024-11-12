@@ -1,14 +1,15 @@
-CXX = g++
-CXXFLAGS = `pkg-config --cflags cairo` -Wall -Wextra -pedantic
-LDFLAGS = -lXfixes -lXcomposite -lX11 -lXrandr `pkg-config --libs cairo`
+CC = gcc
+PKG_DEPS = cairo x11 xext xfixes xrandr
+CFLAGS := $(shell pkg-config --cflags $(PKG_DEPS)) -O2 -Wall -Wextra -pedantic
+LDFLAGS := $(shell pkg-config --libs $(PKG_DEPS))
 
 TARGET = clipscreen
-SOURCES = clipscreen.cpp
+SOURCES = clipscreen.c
 
 all: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 format:
 	clang-format -i $(SOURCES)

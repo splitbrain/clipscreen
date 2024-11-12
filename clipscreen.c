@@ -3,17 +3,13 @@
 #include <X11/extensions/Xfixes.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/shape.h>
-#include <assert.h>
 #include <cairo-xlib.h>
 #include <cairo.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
-#include <unistd.h>
-
-#include <chrono>
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
-#include <thread>
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * @brief Draws a green rectangle on the given Cairo context.
@@ -81,7 +77,7 @@ void add_monitor(Display *d, Window root, int w, int h, int x, int y) {
     monitor.height = h - 10;
     monitor.mwidth = w - 10;  // Aspect ratio 1/1
     monitor.mheight = h - 10; // Aspect ratio 1/1
-    monitor.noutput = 0; // Output 0 is none
+    monitor.noutput = 0;      // Output 0 is none
     monitor.outputs = &primary_output;
 
     XRRSetMonitor(d, root, &monitor);
@@ -136,26 +132,26 @@ Window create_overlay_window(Display *d, Window root, XVisualInfo vinfo, int w, 
  * @param x The x-coordinate of the window.
  * @param y The y-coordinate of the window.
  */
-void initGeometry(int argc, char *argv[], unsigned int &w, unsigned int &h, int &x, int &y) {
+void initGeometry(int argc, char *argv[], unsigned int *w, unsigned int *h, int *x, int *y) {
     if (argc > 2 || argc <= 1) {
         fprintf(stderr, "Usage: %s <width>x<height>+<x>+<y> (e.g. 800x600+100+100)\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    int ret = XParseGeometry(argv[1], &x, &y, &w, &h);
+    int ret = XParseGeometry(argv[1], x, y, w, h);
     if (ret == 0) {
         fprintf(stderr, "invalid geometry: %s (e.g. 800x600+100+100)\n", argv[1]);
         exit(EXIT_FAILURE);
     }
 
     // ensure minimum size so that we can draw a border around something
-    if (w < 100) {
+    if (*w < 100) {
         fprintf(stderr, "Auto adjusted width\n");
-        w = 100;
+        *w = 100;
     }
-    if (h < 100) {
+    if (*h < 100) {
         fprintf(stderr, "Auto adjusted height\n");
-        h = 100;
+        *h = 100;
     }
 }
 
@@ -175,7 +171,7 @@ int main(int argc, char *argv[]) {
     int y = 0;
 
     // parse geometry from arguments
-    initGeometry(argc, argv, w, h, x, y);
+    initGeometry(argc, argv, &w, &h, &x, &y);
 
     // set up X11
     Display *d = XOpenDisplay(NULL);
@@ -205,7 +201,7 @@ int main(int argc, char *argv[]) {
     sigemptyset(&sigset);
     sigaddset(&sigset, SIGINT);
     sigaddset(&sigset, SIGTERM);
-    sigprocmask(SIG_BLOCK, &sigset, nullptr);
+    sigprocmask(SIG_BLOCK, &sigset, NULL);
     sigwait(&sigset, &sig);
 
     // clean up
